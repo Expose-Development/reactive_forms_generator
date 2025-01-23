@@ -8,7 +8,9 @@ environment:
   sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
-  reactive_forms: ^17.0.0
+  reactive_forms:
+    git:
+      url: git@github.com:Expose-Development/reactive_forms.git
   collection: ^1.18.0
   flutter:
     sdk: flutter
