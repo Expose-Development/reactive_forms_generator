@@ -1,9 +1,81 @@
-// coverage:ignore-file
+@Timeout(Duration(seconds: 145))
+import 'package:test/test.dart';
+
+import '../helpers.dart';
+
+const fileName = 'nested_generics_output';
+
+void main() {
+  group('reactive_forms_generator', () {
+    test(
+      'Nested generics Output',
+      () async {
+        return testGenerator(
+          fileName: fileName,
+          model: '''
+          import 'package:freezed_annotation/freezed_annotation.dart';
+          import 'package:reactive_forms_annotations/reactive_forms_annotations.dart';
+
+          part '$fileName.freezed.dart';
+          part '$fileName.gform.dart';
+
+          @freezed
+          @Rf(output: true)
+          abstract class ProductDetailsO<P extends Product, C extends Cart>
+              with _\$ProductDetailsO<P, C> {
+            factory ProductDetailsO({
+              @RfControl() String? description,
+              @Rf(output: false) IdO<P, C>? id,
+            }) = _ProductDetailsO;
+          
+            ProductDetailsO._();
+          }
+          
+          @freezed
+          @Rf(output: false)
+          @RfGroup()
+          abstract class IdO<P extends Product, C extends Cart> with _\$IdO<P, C> {
+            factory IdO({
+              @RfControl() String? companyName,
+              @RfControl() String? name,
+            }) = _IdO;
+          
+            IdO._();
+          }
+          
+          @freezed
+          abstract class Product with _\$Product {
+            const factory Product({
+              String? companyName,
+              String? name,
+            }) = _Product;
+          
+            const Product._();
+          }
+          
+          @freezed
+          abstract class Cart with _\$Cart {
+            const factory Cart({
+              Product? product,
+              String? description,
+            }) = _Cart;
+          
+            const Cart._();
+          }
+          ''',
+          generatedFile: generatedFile,
+        );
+      },
+    );
+  });
+}
+
+const generatedFile = r'''// coverage:ignore-file
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
-part of 'product_output.dart';
+part of 'nested_generics_output.dart';
 
 // **************************************************************************
 // ReactiveFormsGenerator
@@ -931,7 +1003,7 @@ class IdOForm<P extends Product, C extends Cart>
 
 @freezed
 @Rf(output: true)
-class ProductDetailsOOutput<P extends Product, C extends Cart>
+abstract class ProductDetailsOOutput<P extends Product, C extends Cart>
     with _$ProductDetailsOOutput<P, C> {
   factory ProductDetailsOOutput(
       {@RfControl() String? description,
@@ -942,7 +1014,8 @@ class ProductDetailsOOutput<P extends Product, C extends Cart>
 @freezed
 @Rf(output: false)
 @RfGroup()
-class IdOOutput<P extends Product, C extends Cart> with _$IdOOutput<P, C> {
+abstract class IdOOutput<P extends Product, C extends Cart>
+    with _$IdOOutput<P, C> {
   factory IdOOutput(
       {@RfControl() String? companyName,
       @RfControl() String? name}) = _IdOOutput;
@@ -959,6 +1032,8 @@ class ReactiveProductDetailsOFormArrayBuilder<
     this.formControl,
     this.builder,
     required this.itemBuilder,
+    this.emptyBuilder,
+    this.controlFilter,
   })  : assert(control != null || formControl != null,
             "You have to specify `control` or `formControl`!"),
         super(key: key);
@@ -978,6 +1053,12 @@ class ReactiveProductDetailsOFormArrayBuilder<
       ReactiveProductDetailsOFormArrayBuilderT? item,
       ProductDetailsOForm<P, C> formModel) itemBuilder;
 
+  final Widget Function(BuildContext context)? emptyBuilder;
+
+  final bool Function(
+          FormControl<ReactiveProductDetailsOFormArrayBuilderT> control)?
+      controlFilter;
+
   @override
   Widget build(BuildContext context) {
     final formModel = ReactiveProductDetailsOForm.of<P, C>(context);
@@ -989,30 +1070,134 @@ class ReactiveProductDetailsOFormArrayBuilder<
     return ReactiveFormArray<ReactiveProductDetailsOFormArrayBuilderT>(
       formArray: formControl ?? control?.call(formModel),
       builder: (context, formArray, child) {
-        final values = formArray.controls.map((e) => e.value).toList();
+        final values = formArray.controls.indexed
+            .where((e) =>
+                controlFilter?.call(
+                  e.$2 as FormControl<ReactiveProductDetailsOFormArrayBuilderT>,
+                ) ??
+                true)
+            .toList();
+
         final itemList = values
-            .asMap()
-            .map((i, item) {
+            .map((item) {
               return MapEntry(
-                i,
+                item.$1,
                 itemBuilder(
                   context,
-                  i,
-                  formArray.controls[i]
+                  item.$1,
+                  formArray.controls[item.$1]
                       as FormControl<ReactiveProductDetailsOFormArrayBuilderT>,
-                  item,
+                  item.$2.value,
                   formModel,
                 ),
               );
             })
-            .values
+            .map((e) => e.value)
             .toList();
+
+        if (emptyBuilder != null && itemList.isEmpty) {
+          return emptyBuilder!(context);
+        }
 
         return builder?.call(
               context,
               itemList,
               formModel,
             ) ??
+            Column(children: itemList);
+      },
+    );
+  }
+}
+
+class ReactiveProductDetailsOFormArrayBuilder2<
+    ReactiveProductDetailsOFormArrayBuilderT,
+    P extends Product,
+    C extends Cart> extends StatelessWidget {
+  const ReactiveProductDetailsOFormArrayBuilder2({
+    Key? key,
+    this.control,
+    this.formControl,
+    this.builder,
+    required this.itemBuilder,
+    this.emptyBuilder,
+    this.controlFilter,
+  })  : assert(control != null || formControl != null,
+            "You have to specify `control` or `formControl`!"),
+        super(key: key);
+
+  final FormArray<ReactiveProductDetailsOFormArrayBuilderT>? formControl;
+
+  final FormArray<ReactiveProductDetailsOFormArrayBuilderT>? Function(
+      ProductDetailsOForm<P, C> formModel)? control;
+
+  final Widget Function(
+      ({
+        BuildContext context,
+        List<Widget> itemList,
+        ProductDetailsOForm<P, C> formModel
+      }) params)? builder;
+
+  final Widget Function(
+      ({
+        BuildContext context,
+        int i,
+        FormControl<ReactiveProductDetailsOFormArrayBuilderT> control,
+        ReactiveProductDetailsOFormArrayBuilderT? item,
+        ProductDetailsOForm<P, C> formModel
+      }) params) itemBuilder;
+
+  final Widget Function(BuildContext context)? emptyBuilder;
+
+  final bool Function(
+          FormControl<ReactiveProductDetailsOFormArrayBuilderT> control)?
+      controlFilter;
+
+  @override
+  Widget build(BuildContext context) {
+    final formModel = ReactiveProductDetailsOForm.of<P, C>(context);
+
+    if (formModel == null) {
+      throw FormControlParentNotFoundException(this);
+    }
+
+    return ReactiveFormArray<ReactiveProductDetailsOFormArrayBuilderT>(
+      formArray: formControl ?? control?.call(formModel),
+      builder: (context, formArray, child) {
+        final values = formArray.controls.indexed
+            .where((e) =>
+                controlFilter?.call(
+                  e.$2 as FormControl<ReactiveProductDetailsOFormArrayBuilderT>,
+                ) ??
+                true)
+            .toList();
+
+        final itemList = values
+            .map((item) {
+              return MapEntry(
+                item.$1,
+                itemBuilder((
+                  context: context,
+                  i: item.$1,
+                  control: formArray.controls[item.$1]
+                      as FormControl<ReactiveProductDetailsOFormArrayBuilderT>,
+                  item: item.$2.value,
+                  formModel: formModel
+                )),
+              );
+            })
+            .map((e) => e.value)
+            .toList();
+
+        if (emptyBuilder != null && itemList.isEmpty) {
+          return emptyBuilder!(context);
+        }
+
+        return builder?.call((
+              context: context,
+              itemList: itemList,
+              formModel: formModel,
+            )) ??
             Column(children: itemList);
       },
     );
@@ -1303,6 +1488,8 @@ class ReactiveIdOFormArrayBuilder<ReactiveIdOFormArrayBuilderT,
     this.formControl,
     this.builder,
     required this.itemBuilder,
+    this.emptyBuilder,
+    this.controlFilter,
   })  : assert(control != null || formControl != null,
             "You have to specify `control` or `formControl`!"),
         super(key: key);
@@ -1323,6 +1510,11 @@ class ReactiveIdOFormArrayBuilder<ReactiveIdOFormArrayBuilderT,
       ReactiveIdOFormArrayBuilderT? item,
       IdOForm<P, C> formModel) itemBuilder;
 
+  final Widget Function(BuildContext context)? emptyBuilder;
+
+  final bool Function(FormControl<ReactiveIdOFormArrayBuilderT> control)?
+      controlFilter;
+
   @override
   Widget build(BuildContext context) {
     final formModel = ReactiveIdOForm.of<P, C>(context);
@@ -1334,30 +1526,131 @@ class ReactiveIdOFormArrayBuilder<ReactiveIdOFormArrayBuilderT,
     return ReactiveFormArray<ReactiveIdOFormArrayBuilderT>(
       formArray: formControl ?? control?.call(formModel),
       builder: (context, formArray, child) {
-        final values = formArray.controls.map((e) => e.value).toList();
+        final values = formArray.controls.indexed
+            .where((e) =>
+                controlFilter?.call(
+                  e.$2 as FormControl<ReactiveIdOFormArrayBuilderT>,
+                ) ??
+                true)
+            .toList();
+
         final itemList = values
-            .asMap()
-            .map((i, item) {
+            .map((item) {
               return MapEntry(
-                i,
+                item.$1,
                 itemBuilder(
                   context,
-                  i,
-                  formArray.controls[i]
+                  item.$1,
+                  formArray.controls[item.$1]
                       as FormControl<ReactiveIdOFormArrayBuilderT>,
-                  item,
+                  item.$2.value,
                   formModel,
                 ),
               );
             })
-            .values
+            .map((e) => e.value)
             .toList();
+
+        if (emptyBuilder != null && itemList.isEmpty) {
+          return emptyBuilder!(context);
+        }
 
         return builder?.call(
               context,
               itemList,
               formModel,
             ) ??
+            Column(children: itemList);
+      },
+    );
+  }
+}
+
+class ReactiveIdOFormArrayBuilder2<ReactiveIdOFormArrayBuilderT,
+    P extends Product, C extends Cart> extends StatelessWidget {
+  const ReactiveIdOFormArrayBuilder2({
+    Key? key,
+    this.control,
+    this.formControl,
+    this.builder,
+    required this.itemBuilder,
+    this.emptyBuilder,
+    this.controlFilter,
+  })  : assert(control != null || formControl != null,
+            "You have to specify `control` or `formControl`!"),
+        super(key: key);
+
+  final FormArray<ReactiveIdOFormArrayBuilderT>? formControl;
+
+  final FormArray<ReactiveIdOFormArrayBuilderT>? Function(
+      IdOForm<P, C> formModel)? control;
+
+  final Widget Function(
+      ({
+        BuildContext context,
+        List<Widget> itemList,
+        IdOForm<P, C> formModel
+      }) params)? builder;
+
+  final Widget Function(
+      ({
+        BuildContext context,
+        int i,
+        FormControl<ReactiveIdOFormArrayBuilderT> control,
+        ReactiveIdOFormArrayBuilderT? item,
+        IdOForm<P, C> formModel
+      }) params) itemBuilder;
+
+  final Widget Function(BuildContext context)? emptyBuilder;
+
+  final bool Function(FormControl<ReactiveIdOFormArrayBuilderT> control)?
+      controlFilter;
+
+  @override
+  Widget build(BuildContext context) {
+    final formModel = ReactiveIdOForm.of<P, C>(context);
+
+    if (formModel == null) {
+      throw FormControlParentNotFoundException(this);
+    }
+
+    return ReactiveFormArray<ReactiveIdOFormArrayBuilderT>(
+      formArray: formControl ?? control?.call(formModel),
+      builder: (context, formArray, child) {
+        final values = formArray.controls.indexed
+            .where((e) =>
+                controlFilter?.call(
+                  e.$2 as FormControl<ReactiveIdOFormArrayBuilderT>,
+                ) ??
+                true)
+            .toList();
+
+        final itemList = values
+            .map((item) {
+              return MapEntry(
+                item.$1,
+                itemBuilder((
+                  context: context,
+                  i: item.$1,
+                  control: formArray.controls[item.$1]
+                      as FormControl<ReactiveIdOFormArrayBuilderT>,
+                  item: item.$2.value,
+                  formModel: formModel
+                )),
+              );
+            })
+            .map((e) => e.value)
+            .toList();
+
+        if (emptyBuilder != null && itemList.isEmpty) {
+          return emptyBuilder!(context);
+        }
+
+        return builder?.call((
+              context: context,
+              itemList: itemList,
+              formModel: formModel,
+            )) ??
             Column(children: itemList);
       },
     );
@@ -1433,3 +1726,4 @@ class ReactiveIdOFormFormGroupArrayBuilder<
     );
   }
 }
+''';

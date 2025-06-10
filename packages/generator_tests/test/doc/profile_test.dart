@@ -59,7 +59,7 @@ void main() {
             
             @freezed
             @Rf(output: false)
-            class Profile with _\$Profile {
+            abstract class Profile with _\$Profile {
               const Profile._();
             
               factory Profile(String id, {
@@ -80,7 +80,7 @@ void main() {
             
             @freezed
             @RfGroup()
-            class ThresholdSetting with _\$ThresholdSetting {
+            abstract class ThresholdSetting with _\$ThresholdSetting {
               static const values = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
             
               const factory ThresholdSetting({
@@ -94,7 +94,7 @@ void main() {
             
             @freezed
             @RfGroup()
-            class TimerSetting with _\$TimerSetting {
+            abstract class TimerSetting with _\$TimerSetting {
               static const values = [1, 2, 3, 4, 5, 6];
             
               const factory TimerSetting({
@@ -108,7 +108,7 @@ void main() {
             
             @RfGroup()
             @freezed
-            class IncidenceFilter with _\$IncidenceFilter {
+            abstract class IncidenceFilter with _\$IncidenceFilter {
               const factory IncidenceFilter({
                 @RfControl<bool>() @Default(true) bool isMobilityEnabled,
                 @RfControl<bool>() @Default(true) bool isFurcationEnabled,
@@ -133,7 +133,7 @@ void main() {
             enum ToothSide { facial, lingual }
             
             @freezed
-            class ScanOrder with _\$ScanOrder {
+            abstract class ScanOrder with _\$ScanOrder {
               const factory ScanOrder.arch(
                 Jaw jaw, {
                 required Direction direction,
@@ -151,7 +151,7 @@ void main() {
             }
             
             @freezed
-            class ChartingOrderValue with _\$ChartingOrderValue {
+            abstract class ChartingOrderValue with _\$ChartingOrderValue {
               const factory ChartingOrderValue({
                 @Default(ChartingOrderType.arch) ChartingOrderType chartingOrder,
                 @Default(0) int selectedOption,
@@ -2752,6 +2752,8 @@ class ReactiveProfileFormArrayBuilder<ReactiveProfileFormArrayBuilderT>
     this.formControl,
     this.builder,
     required this.itemBuilder,
+    this.emptyBuilder,
+    this.controlFilter,
   })  : assert(control != null || formControl != null,
             "You have to specify `control` or `formControl`!"),
         super(key: key);
@@ -2772,6 +2774,11 @@ class ReactiveProfileFormArrayBuilder<ReactiveProfileFormArrayBuilderT>
       ReactiveProfileFormArrayBuilderT? item,
       ProfileForm formModel) itemBuilder;
 
+  final Widget Function(BuildContext context)? emptyBuilder;
+
+  final bool Function(FormControl<ReactiveProfileFormArrayBuilderT> control)?
+      controlFilter;
+
   @override
   Widget build(BuildContext context) {
     final formModel = ReactiveProfileForm.of(context);
@@ -2783,30 +2790,131 @@ class ReactiveProfileFormArrayBuilder<ReactiveProfileFormArrayBuilderT>
     return ReactiveFormArray<ReactiveProfileFormArrayBuilderT>(
       formArray: formControl ?? control?.call(formModel),
       builder: (context, formArray, child) {
-        final values = formArray.controls.map((e) => e.value).toList();
+        final values = formArray.controls.indexed
+            .where((e) =>
+                controlFilter?.call(
+                  e.$2 as FormControl<ReactiveProfileFormArrayBuilderT>,
+                ) ??
+                true)
+            .toList();
+
         final itemList = values
-            .asMap()
-            .map((i, item) {
+            .map((item) {
               return MapEntry(
-                i,
+                item.$1,
                 itemBuilder(
                   context,
-                  i,
-                  formArray.controls[i]
+                  item.$1,
+                  formArray.controls[item.$1]
                       as FormControl<ReactiveProfileFormArrayBuilderT>,
-                  item,
+                  item.$2.value,
                   formModel,
                 ),
               );
             })
-            .values
+            .map((e) => e.value)
             .toList();
+
+        if (emptyBuilder != null && itemList.isEmpty) {
+          return emptyBuilder!(context);
+        }
 
         return builder?.call(
               context,
               itemList,
               formModel,
             ) ??
+            Column(children: itemList);
+      },
+    );
+  }
+}
+
+class ReactiveProfileFormArrayBuilder2<ReactiveProfileFormArrayBuilderT>
+    extends StatelessWidget {
+  const ReactiveProfileFormArrayBuilder2({
+    Key? key,
+    this.control,
+    this.formControl,
+    this.builder,
+    required this.itemBuilder,
+    this.emptyBuilder,
+    this.controlFilter,
+  })  : assert(control != null || formControl != null,
+            "You have to specify `control` or `formControl`!"),
+        super(key: key);
+
+  final FormArray<ReactiveProfileFormArrayBuilderT>? formControl;
+
+  final FormArray<ReactiveProfileFormArrayBuilderT>? Function(
+      ProfileForm formModel)? control;
+
+  final Widget Function(
+      ({
+        BuildContext context,
+        List<Widget> itemList,
+        ProfileForm formModel
+      }) params)? builder;
+
+  final Widget Function(
+      ({
+        BuildContext context,
+        int i,
+        FormControl<ReactiveProfileFormArrayBuilderT> control,
+        ReactiveProfileFormArrayBuilderT? item,
+        ProfileForm formModel
+      }) params) itemBuilder;
+
+  final Widget Function(BuildContext context)? emptyBuilder;
+
+  final bool Function(FormControl<ReactiveProfileFormArrayBuilderT> control)?
+      controlFilter;
+
+  @override
+  Widget build(BuildContext context) {
+    final formModel = ReactiveProfileForm.of(context);
+
+    if (formModel == null) {
+      throw FormControlParentNotFoundException(this);
+    }
+
+    return ReactiveFormArray<ReactiveProfileFormArrayBuilderT>(
+      formArray: formControl ?? control?.call(formModel),
+      builder: (context, formArray, child) {
+        final values = formArray.controls.indexed
+            .where((e) =>
+                controlFilter?.call(
+                  e.$2 as FormControl<ReactiveProfileFormArrayBuilderT>,
+                ) ??
+                true)
+            .toList();
+
+        final itemList = values
+            .map((item) {
+              return MapEntry(
+                item.$1,
+                itemBuilder((
+                  context: context,
+                  i: item.$1,
+                  control: formArray.controls[item.$1]
+                      as FormControl<ReactiveProfileFormArrayBuilderT>,
+                  item: item.$2.value,
+                  formModel: formModel
+                )),
+              );
+            })
+            .map((e) => e.value)
+            .toList();
+
+        if (emptyBuilder != null && itemList.isEmpty) {
+          return emptyBuilder!(context);
+        }
+
+        return builder?.call((
+              context: context,
+              itemList: itemList,
+              formModel: formModel,
+            )) ??
             Column(children: itemList);
       },
     );

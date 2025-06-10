@@ -519,6 +519,8 @@ class ReactiveSomeWiredNameFormArrayBuilder<
     this.formControl,
     this.builder,
     required this.itemBuilder,
+    this.emptyBuilder,
+    this.controlFilter,
   })  : assert(control != null || formControl != null,
             "You have to specify `control` or `formControl`!"),
         super(key: key);
@@ -538,6 +540,12 @@ class ReactiveSomeWiredNameFormArrayBuilder<
       ReactiveSomeWiredNameFormArrayBuilderT? item,
       SomeWiredNameForm formModel) itemBuilder;
 
+  final Widget Function(BuildContext context)? emptyBuilder;
+
+  final bool Function(
+          FormControl<ReactiveSomeWiredNameFormArrayBuilderT> control)?
+      controlFilter;
+
   @override
   Widget build(BuildContext context) {
     final formModel = ReactiveSomeWiredNameForm.of(context);
@@ -549,30 +557,132 @@ class ReactiveSomeWiredNameFormArrayBuilder<
     return ReactiveFormArray<ReactiveSomeWiredNameFormArrayBuilderT>(
       formArray: formControl ?? control?.call(formModel),
       builder: (context, formArray, child) {
-        final values = formArray.controls.map((e) => e.value).toList();
+        final values = formArray.controls.indexed
+            .where((e) =>
+                controlFilter?.call(
+                  e.$2 as FormControl<ReactiveSomeWiredNameFormArrayBuilderT>,
+                ) ??
+                true)
+            .toList();
+
         final itemList = values
-            .asMap()
-            .map((i, item) {
+            .map((item) {
               return MapEntry(
-                i,
+                item.$1,
                 itemBuilder(
                   context,
-                  i,
-                  formArray.controls[i]
+                  item.$1,
+                  formArray.controls[item.$1]
                       as FormControl<ReactiveSomeWiredNameFormArrayBuilderT>,
-                  item,
+                  item.$2.value,
                   formModel,
                 ),
               );
             })
-            .values
+            .map((e) => e.value)
             .toList();
+
+        if (emptyBuilder != null && itemList.isEmpty) {
+          return emptyBuilder!(context);
+        }
 
         return builder?.call(
               context,
               itemList,
               formModel,
             ) ??
+            Column(children: itemList);
+      },
+    );
+  }
+}
+
+class ReactiveSomeWiredNameFormArrayBuilder2<
+    ReactiveSomeWiredNameFormArrayBuilderT> extends StatelessWidget {
+  const ReactiveSomeWiredNameFormArrayBuilder2({
+    Key? key,
+    this.control,
+    this.formControl,
+    this.builder,
+    required this.itemBuilder,
+    this.emptyBuilder,
+    this.controlFilter,
+  })  : assert(control != null || formControl != null,
+            "You have to specify `control` or `formControl`!"),
+        super(key: key);
+
+  final FormArray<ReactiveSomeWiredNameFormArrayBuilderT>? formControl;
+
+  final FormArray<ReactiveSomeWiredNameFormArrayBuilderT>? Function(
+      SomeWiredNameForm formModel)? control;
+
+  final Widget Function(
+      ({
+        BuildContext context,
+        List<Widget> itemList,
+        SomeWiredNameForm formModel
+      }) params)? builder;
+
+  final Widget Function(
+      ({
+        BuildContext context,
+        int i,
+        FormControl<ReactiveSomeWiredNameFormArrayBuilderT> control,
+        ReactiveSomeWiredNameFormArrayBuilderT? item,
+        SomeWiredNameForm formModel
+      }) params) itemBuilder;
+
+  final Widget Function(BuildContext context)? emptyBuilder;
+
+  final bool Function(
+          FormControl<ReactiveSomeWiredNameFormArrayBuilderT> control)?
+      controlFilter;
+
+  @override
+  Widget build(BuildContext context) {
+    final formModel = ReactiveSomeWiredNameForm.of(context);
+
+    if (formModel == null) {
+      throw FormControlParentNotFoundException(this);
+    }
+
+    return ReactiveFormArray<ReactiveSomeWiredNameFormArrayBuilderT>(
+      formArray: formControl ?? control?.call(formModel),
+      builder: (context, formArray, child) {
+        final values = formArray.controls.indexed
+            .where((e) =>
+                controlFilter?.call(
+                  e as FormControl<ReactiveSomeWiredNameFormArrayBuilderT>,
+                ) ??
+                true)
+            .toList();
+
+        final itemList = values
+            .map((item) {
+              return MapEntry(
+                item.$1,
+                itemBuilder((
+                  context: context,
+                  i: item.$1,
+                  control: formArray.controls[item.$1]
+                      as FormControl<ReactiveSomeWiredNameFormArrayBuilderT>,
+                  item: item.$2.value,
+                  formModel: formModel
+                )),
+              );
+            })
+            .map((e) => e.value)
+            .toList();
+
+        if (emptyBuilder != null && itemList.isEmpty) {
+          return emptyBuilder!(context);
+        }
+
+        return builder?.call((
+              context: context,
+              itemList: itemList,
+              formModel: formModel,
+            )) ??
             Column(children: itemList);
       },
     );

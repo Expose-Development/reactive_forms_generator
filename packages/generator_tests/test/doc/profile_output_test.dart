@@ -59,7 +59,7 @@ void main() {
             
             @freezed
             @Rf(output: true)
-            class ProfileO with _\$ProfileO {
+            abstract class ProfileO with _\$ProfileO {
               const ProfileO._();
             
               factory ProfileO(
@@ -82,7 +82,7 @@ void main() {
             
             @freezed
             @RfGroup()
-            class ThresholdSettingO with _\$ThresholdSettingO {
+            abstract class ThresholdSettingO with _\$ThresholdSettingO {
               static const values = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
             
               const factory ThresholdSettingO({
@@ -96,7 +96,7 @@ void main() {
             
             @freezed
             @RfGroup()
-            class TimerSettingO with _\$TimerSettingO {
+            abstract class TimerSettingO with _\$TimerSettingO {
               static const values = [1, 2, 3, 4, 5, 6];
             
               const factory TimerSettingO({
@@ -110,7 +110,7 @@ void main() {
             
             @RfGroup()
             @freezed
-            class IncidenceFilterO with _\$IncidenceFilterO {
+            abstract class IncidenceFilterO with _\$IncidenceFilterO {
               const factory IncidenceFilterO({
                 @RfControl<bool>() @Default(true) bool isMobilityEnabled,
                 @RfControl<bool>() @Default(true) bool isFurcationEnabled,
@@ -137,7 +137,7 @@ void main() {
             enum ToothSide { facial, lingual }
             
             @freezed
-            class ScanOrder with _\$ScanOrder {
+            abstract class ScanOrder with _\$ScanOrder {
               const factory ScanOrder.arch(
                 Jaw jaw, {
                 required Direction direction,
@@ -155,7 +155,7 @@ void main() {
             }
             
             @freezed
-            class ChartingOrderValue with _\$ChartingOrderValue {
+            abstract class ChartingOrderValue with _\$ChartingOrderValue {
               const factory ChartingOrderValue({
                 @Default(ChartingOrderType.arch) ChartingOrderType chartingOrder,
                 @Default(0) int selectedOption,
@@ -2759,7 +2759,7 @@ class TimerSettingOForm
 
 @freezed
 @Rf(output: true)
-class ProfileOOutput with _$ProfileOOutput {
+abstract class ProfileOOutput with _$ProfileOOutput {
   const ProfileOOutput._();
   factory ProfileOOutput(String id,
       {required String anotherId,
@@ -2779,7 +2779,7 @@ class ProfileOOutput with _$ProfileOOutput {
 
 @freezed
 @RfGroup()
-class ThresholdSettingOOutput with _$ThresholdSettingOOutput {
+abstract class ThresholdSettingOOutput with _$ThresholdSettingOOutput {
   static const values = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   const factory ThresholdSettingOOutput(
       {@RfControl<bool>() @Default(true) bool isEnabled,
@@ -2790,7 +2790,7 @@ class ThresholdSettingOOutput with _$ThresholdSettingOOutput {
 
 @freezed
 @RfGroup()
-class TimerSettingOOutput with _$TimerSettingOOutput {
+abstract class TimerSettingOOutput with _$TimerSettingOOutput {
   static const values = [1, 2, 3, 4, 5, 6];
   const factory TimerSettingOOutput(
       {@RfControl<bool>() @Default(false) bool isEnabled,
@@ -2801,7 +2801,7 @@ class TimerSettingOOutput with _$TimerSettingOOutput {
 
 @RfGroup()
 @freezed
-class IncidenceFilterOOutput with _$IncidenceFilterOOutput {
+abstract class IncidenceFilterOOutput with _$IncidenceFilterOOutput {
   const factory IncidenceFilterOOutput(
           {@RfControl<bool>() @Default(true) bool isMobilityEnabled,
           @RfControl<bool>() @Default(true) bool isFurcationEnabled,
@@ -2822,6 +2822,8 @@ class ReactiveProfileOFormArrayBuilder<ReactiveProfileOFormArrayBuilderT>
     this.formControl,
     this.builder,
     required this.itemBuilder,
+    this.emptyBuilder,
+    this.controlFilter,
   })  : assert(control != null || formControl != null,
             "You have to specify `control` or `formControl`!"),
         super(key: key);
@@ -2842,6 +2844,11 @@ class ReactiveProfileOFormArrayBuilder<ReactiveProfileOFormArrayBuilderT>
       ReactiveProfileOFormArrayBuilderT? item,
       ProfileOForm formModel) itemBuilder;
 
+  final Widget Function(BuildContext context)? emptyBuilder;
+
+  final bool Function(FormControl<ReactiveProfileOFormArrayBuilderT> control)?
+      controlFilter;
+
   @override
   Widget build(BuildContext context) {
     final formModel = ReactiveProfileOForm.of(context);
@@ -2853,30 +2860,131 @@ class ReactiveProfileOFormArrayBuilder<ReactiveProfileOFormArrayBuilderT>
     return ReactiveFormArray<ReactiveProfileOFormArrayBuilderT>(
       formArray: formControl ?? control?.call(formModel),
       builder: (context, formArray, child) {
-        final values = formArray.controls.map((e) => e.value).toList();
+        final values = formArray.controls.indexed
+            .where((e) =>
+                controlFilter?.call(
+                  e.$2 as FormControl<ReactiveProfileOFormArrayBuilderT>,
+                ) ??
+                true)
+            .toList();
+
         final itemList = values
-            .asMap()
-            .map((i, item) {
+            .map((item) {
               return MapEntry(
-                i,
+                item.$1,
                 itemBuilder(
                   context,
-                  i,
-                  formArray.controls[i]
+                  item.$1,
+                  formArray.controls[item.$1]
                       as FormControl<ReactiveProfileOFormArrayBuilderT>,
-                  item,
+                  item.$2.value,
                   formModel,
                 ),
               );
             })
-            .values
+            .map((e) => e.value)
             .toList();
+
+        if (emptyBuilder != null && itemList.isEmpty) {
+          return emptyBuilder!(context);
+        }
 
         return builder?.call(
               context,
               itemList,
               formModel,
             ) ??
+            Column(children: itemList);
+      },
+    );
+  }
+}
+
+class ReactiveProfileOFormArrayBuilder2<ReactiveProfileOFormArrayBuilderT>
+    extends StatelessWidget {
+  const ReactiveProfileOFormArrayBuilder2({
+    Key? key,
+    this.control,
+    this.formControl,
+    this.builder,
+    required this.itemBuilder,
+    this.emptyBuilder,
+    this.controlFilter,
+  })  : assert(control != null || formControl != null,
+            "You have to specify `control` or `formControl`!"),
+        super(key: key);
+
+  final FormArray<ReactiveProfileOFormArrayBuilderT>? formControl;
+
+  final FormArray<ReactiveProfileOFormArrayBuilderT>? Function(
+      ProfileOForm formModel)? control;
+
+  final Widget Function(
+      ({
+        BuildContext context,
+        List<Widget> itemList,
+        ProfileOForm formModel
+      }) params)? builder;
+
+  final Widget Function(
+      ({
+        BuildContext context,
+        int i,
+        FormControl<ReactiveProfileOFormArrayBuilderT> control,
+        ReactiveProfileOFormArrayBuilderT? item,
+        ProfileOForm formModel
+      }) params) itemBuilder;
+
+  final Widget Function(BuildContext context)? emptyBuilder;
+
+  final bool Function(FormControl<ReactiveProfileOFormArrayBuilderT> control)?
+      controlFilter;
+
+  @override
+  Widget build(BuildContext context) {
+    final formModel = ReactiveProfileOForm.of(context);
+
+    if (formModel == null) {
+      throw FormControlParentNotFoundException(this);
+    }
+
+    return ReactiveFormArray<ReactiveProfileOFormArrayBuilderT>(
+      formArray: formControl ?? control?.call(formModel),
+      builder: (context, formArray, child) {
+        final values = formArray.controls.indexed
+            .where((e) =>
+                controlFilter?.call(
+                  e.$2 as FormControl<ReactiveProfileOFormArrayBuilderT>,
+                ) ??
+                true)
+            .toList();
+
+        final itemList = values
+            .map((item) {
+              return MapEntry(
+                item.$1,
+                itemBuilder((
+                  context: context,
+                  i: item.$1,
+                  control: formArray.controls[item.$1]
+                      as FormControl<ReactiveProfileOFormArrayBuilderT>,
+                  item: item.$2.value,
+                  formModel: formModel
+                )),
+              );
+            })
+            .map((e) => e.value)
+            .toList();
+
+        if (emptyBuilder != null && itemList.isEmpty) {
+          return emptyBuilder!(context);
+        }
+
+        return builder?.call((
+              context: context,
+              itemList: itemList,
+              formModel: formModel,
+            )) ??
             Column(children: itemList);
       },
     );

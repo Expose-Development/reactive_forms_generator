@@ -26,7 +26,7 @@ void main() {
             
             @freezed
             @Rf(output: false)
-            class FreezedClass with _\$FreezedClass {
+            abstract class FreezedClass with _\$FreezedClass {
               FreezedClass._();
             
               factory FreezedClass(
@@ -1060,6 +1060,8 @@ class ReactiveFreezedClassFormArrayBuilder<
     this.formControl,
     this.builder,
     required this.itemBuilder,
+    this.emptyBuilder,
+    this.controlFilter,
   })  : assert(control != null || formControl != null,
             "You have to specify `control` or `formControl`!"),
         super(key: key);
@@ -1079,6 +1081,12 @@ class ReactiveFreezedClassFormArrayBuilder<
       ReactiveFreezedClassFormArrayBuilderT? item,
       FreezedClassForm formModel) itemBuilder;
 
+  final Widget Function(BuildContext context)? emptyBuilder;
+
+  final bool Function(
+          FormControl<ReactiveFreezedClassFormArrayBuilderT> control)?
+      controlFilter;
+
   @override
   Widget build(BuildContext context) {
     final formModel = ReactiveFreezedClassForm.of(context);
@@ -1090,30 +1098,132 @@ class ReactiveFreezedClassFormArrayBuilder<
     return ReactiveFormArray<ReactiveFreezedClassFormArrayBuilderT>(
       formArray: formControl ?? control?.call(formModel),
       builder: (context, formArray, child) {
-        final values = formArray.controls.map((e) => e.value).toList();
+        final values = formArray.controls.indexed
+            .where((e) =>
+                controlFilter?.call(
+                  e.$2 as FormControl<ReactiveFreezedClassFormArrayBuilderT>,
+                ) ??
+                true)
+            .toList();
+
         final itemList = values
-            .asMap()
-            .map((i, item) {
+            .map((item) {
               return MapEntry(
-                i,
+                item.$1,
                 itemBuilder(
                   context,
-                  i,
-                  formArray.controls[i]
+                  item.$1,
+                  formArray.controls[item.$1]
                       as FormControl<ReactiveFreezedClassFormArrayBuilderT>,
-                  item,
+                  item.$2.value,
                   formModel,
                 ),
               );
             })
-            .values
+            .map((e) => e.value)
             .toList();
+
+        if (emptyBuilder != null && itemList.isEmpty) {
+          return emptyBuilder!(context);
+        }
 
         return builder?.call(
               context,
               itemList,
               formModel,
             ) ??
+            Column(children: itemList);
+      },
+    );
+  }
+}
+
+class ReactiveFreezedClassFormArrayBuilder2<
+    ReactiveFreezedClassFormArrayBuilderT> extends StatelessWidget {
+  const ReactiveFreezedClassFormArrayBuilder2({
+    Key? key,
+    this.control,
+    this.formControl,
+    this.builder,
+    required this.itemBuilder,
+    this.emptyBuilder,
+    this.controlFilter,
+  })  : assert(control != null || formControl != null,
+            "You have to specify `control` or `formControl`!"),
+        super(key: key);
+
+  final FormArray<ReactiveFreezedClassFormArrayBuilderT>? formControl;
+
+  final FormArray<ReactiveFreezedClassFormArrayBuilderT>? Function(
+      FreezedClassForm formModel)? control;
+
+  final Widget Function(
+      ({
+        BuildContext context,
+        List<Widget> itemList,
+        FreezedClassForm formModel
+      }) params)? builder;
+
+  final Widget Function(
+      ({
+        BuildContext context,
+        int i,
+        FormControl<ReactiveFreezedClassFormArrayBuilderT> control,
+        ReactiveFreezedClassFormArrayBuilderT? item,
+        FreezedClassForm formModel
+      }) params) itemBuilder;
+
+  final Widget Function(BuildContext context)? emptyBuilder;
+
+  final bool Function(
+          FormControl<ReactiveFreezedClassFormArrayBuilderT> control)?
+      controlFilter;
+
+  @override
+  Widget build(BuildContext context) {
+    final formModel = ReactiveFreezedClassForm.of(context);
+
+    if (formModel == null) {
+      throw FormControlParentNotFoundException(this);
+    }
+
+    return ReactiveFormArray<ReactiveFreezedClassFormArrayBuilderT>(
+      formArray: formControl ?? control?.call(formModel),
+      builder: (context, formArray, child) {
+        final values = formArray.controls.indexed
+            .where((e) =>
+                controlFilter?.call(
+                  e.$2 as FormControl<ReactiveFreezedClassFormArrayBuilderT>,
+                ) ??
+                true)
+            .toList();
+
+        final itemList = values
+            .map((item) {
+              return MapEntry(
+                item.$1,
+                itemBuilder((
+                  context: context,
+                  i: item.$1,
+                  control: formArray.controls[item.$1]
+                      as FormControl<ReactiveFreezedClassFormArrayBuilderT>,
+                  item: item.$2.value,
+                  formModel: formModel
+                )),
+              );
+            })
+            .map((e) => e.value)
+            .toList();
+
+        if (emptyBuilder != null && itemList.isEmpty) {
+          return emptyBuilder!(context);
+        }
+
+        return builder?.call((
+              context: context,
+              itemList: itemList,
+              formModel: formModel,
+            )) ??
             Column(children: itemList);
       },
     );

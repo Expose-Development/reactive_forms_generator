@@ -8,7 +8,7 @@ const fileName = 'generic_output';
 void main() {
   group('reactive_forms_generator', () {
     test(
-      'Generic',
+      'Generic Output',
       () async {
         return testGenerator(
           fileName: fileName,
@@ -21,7 +21,7 @@ void main() {
             
             @freezed
             @Rf(output: true)
-            class TagsO<T> with _\$TagsO<T> {
+            abstract class TagsO<T> with _\$TagsO<T> {
               factory TagsO({
                 @RfControl() required List<T>? tags,
               }) = _TagsO;
@@ -491,7 +491,7 @@ class TagsOForm<T> implements FormModel<TagsO<T>, TagsOOutput<T>> {
 
 @freezed
 @Rf(output: true)
-class TagsOOutput<T> with _$TagsOOutput<T> {
+abstract class TagsOOutput<T> with _$TagsOOutput<T> {
   factory TagsOOutput({@RfControl() required List<T>? tags}) = _TagsOOutput;
   const TagsOOutput._();
 }
@@ -504,6 +504,8 @@ class ReactiveTagsOFormArrayBuilder<ReactiveTagsOFormArrayBuilderT, T>
     this.formControl,
     this.builder,
     required this.itemBuilder,
+    this.emptyBuilder,
+    this.controlFilter,
   })  : assert(control != null || formControl != null,
             "You have to specify `control` or `formControl`!"),
         super(key: key);
@@ -524,6 +526,11 @@ class ReactiveTagsOFormArrayBuilder<ReactiveTagsOFormArrayBuilderT, T>
       ReactiveTagsOFormArrayBuilderT? item,
       TagsOForm<T> formModel) itemBuilder;
 
+  final Widget Function(BuildContext context)? emptyBuilder;
+
+  final bool Function(FormControl<ReactiveTagsOFormArrayBuilderT> control)?
+      controlFilter;
+
   @override
   Widget build(BuildContext context) {
     final formModel = ReactiveTagsOForm.of<T>(context);
@@ -535,30 +542,131 @@ class ReactiveTagsOFormArrayBuilder<ReactiveTagsOFormArrayBuilderT, T>
     return ReactiveFormArray<ReactiveTagsOFormArrayBuilderT>(
       formArray: formControl ?? control?.call(formModel),
       builder: (context, formArray, child) {
-        final values = formArray.controls.map((e) => e.value).toList();
+        final values = formArray.controls.indexed
+            .where((e) =>
+                controlFilter?.call(
+                  e.$2 as FormControl<ReactiveTagsOFormArrayBuilderT>,
+                ) ??
+                true)
+            .toList();
+
         final itemList = values
-            .asMap()
-            .map((i, item) {
+            .map((item) {
               return MapEntry(
-                i,
+                item.$1,
                 itemBuilder(
                   context,
-                  i,
-                  formArray.controls[i]
+                  item.$1,
+                  formArray.controls[item.$1]
                       as FormControl<ReactiveTagsOFormArrayBuilderT>,
-                  item,
+                  item.$2.value,
                   formModel,
                 ),
               );
             })
-            .values
+            .map((e) => e.value)
             .toList();
+
+        if (emptyBuilder != null && itemList.isEmpty) {
+          return emptyBuilder!(context);
+        }
 
         return builder?.call(
               context,
               itemList,
               formModel,
             ) ??
+            Column(children: itemList);
+      },
+    );
+  }
+}
+
+class ReactiveTagsOFormArrayBuilder2<ReactiveTagsOFormArrayBuilderT, T>
+    extends StatelessWidget {
+  const ReactiveTagsOFormArrayBuilder2({
+    Key? key,
+    this.control,
+    this.formControl,
+    this.builder,
+    required this.itemBuilder,
+    this.emptyBuilder,
+    this.controlFilter,
+  })  : assert(control != null || formControl != null,
+            "You have to specify `control` or `formControl`!"),
+        super(key: key);
+
+  final FormArray<ReactiveTagsOFormArrayBuilderT>? formControl;
+
+  final FormArray<ReactiveTagsOFormArrayBuilderT>? Function(
+      TagsOForm<T> formModel)? control;
+
+  final Widget Function(
+      ({
+        BuildContext context,
+        List<Widget> itemList,
+        TagsOForm<T> formModel
+      }) params)? builder;
+
+  final Widget Function(
+      ({
+        BuildContext context,
+        int i,
+        FormControl<ReactiveTagsOFormArrayBuilderT> control,
+        ReactiveTagsOFormArrayBuilderT? item,
+        TagsOForm<T> formModel
+      }) params) itemBuilder;
+
+  final Widget Function(BuildContext context)? emptyBuilder;
+
+  final bool Function(FormControl<ReactiveTagsOFormArrayBuilderT> control)?
+      controlFilter;
+
+  @override
+  Widget build(BuildContext context) {
+    final formModel = ReactiveTagsOForm.of<T>(context);
+
+    if (formModel == null) {
+      throw FormControlParentNotFoundException(this);
+    }
+
+    return ReactiveFormArray<ReactiveTagsOFormArrayBuilderT>(
+      formArray: formControl ?? control?.call(formModel),
+      builder: (context, formArray, child) {
+        final values = formArray.controls.indexed
+            .where((e) =>
+                controlFilter?.call(
+                  e.$2 as FormControl<ReactiveTagsOFormArrayBuilderT>,
+                ) ??
+                true)
+            .toList();
+
+        final itemList = values
+            .map((item) {
+              return MapEntry(
+                item.$1,
+                itemBuilder((
+                  context: context,
+                  i: item.$1,
+                  control: formArray.controls[item.$1]
+                      as FormControl<ReactiveTagsOFormArrayBuilderT>,
+                  item: item.$2.value,
+                  formModel: formModel
+                )),
+              );
+            })
+            .map((e) => e.value)
+            .toList();
+
+        if (emptyBuilder != null && itemList.isEmpty) {
+          return emptyBuilder!(context);
+        }
+
+        return builder?.call((
+              context: context,
+              itemList: itemList,
+              formModel: formModel,
+            )) ??
             Column(children: itemList);
       },
     );

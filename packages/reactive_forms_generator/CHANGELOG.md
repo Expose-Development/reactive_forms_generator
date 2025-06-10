@@ -1,3 +1,31 @@
+## [7.0.0-beta4]
+
+* bugfix
+
+## [7.0.0-beta3]
+
+* fix for `controlFilter`
+
+## [7.0.0-beta2]
+
+* fix for `emptyBuilder`
+
+## [7.0.0-beta1]
+
+* experimental `...FormArrayBuilder2` with record params
+* `emptyBuilder` and `controlFilter` params form both `...FormArrayBuilder2` and
+  `...FormArrayBuilder`
+
+## [7.0.0-beta0]
+
+* freezed 3
+
+## [6.2.0]
+
+* experimental `...FormArrayBuilder2` with record params
+* `emptyBuilder` and `controlFilter` params form both `...FormArrayBuilder2` and
+  `...FormArrayBuilder`
+
 ## [6.1.1]
 
 * fix https://github.com/artflutter/reactive_forms_generator/issues/184

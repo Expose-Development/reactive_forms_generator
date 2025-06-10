@@ -1,36 +1,36 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:reactive_forms_annotations/reactive_forms_annotations.dart';
 
-part 'product.freezed.dart';
+part 'nested_generics_output.freezed.dart';
 
-part 'product.gform.dart';
+part 'nested_generics_output.gform.dart';
 
 @freezed
-@Rf(output: false)
-class ProductDetails<P extends Product, C extends Cart>
-    with _$ProductDetails<P, C> {
-  factory ProductDetails({
+@Rf(output: true)
+abstract class ProductDetailsO<P extends Product, C extends Cart>
+    with _$ProductDetailsO<P, C> {
+  factory ProductDetailsO({
     @RfControl() String? description,
-    @Rf(output: false) Id<P, C>? id,
-  }) = _ProductDetails;
+    @Rf(output: false) IdO<P, C>? id,
+  }) = _ProductDetailsO;
 
-  ProductDetails._();
+  ProductDetailsO._();
 }
 
 @freezed
 @Rf(output: false)
 @RfGroup()
-class Id<P extends Product, C extends Cart> with _$Id<P, C> {
-  factory Id({
+abstract class IdO<P extends Product, C extends Cart> with _$IdO<P, C> {
+  factory IdO({
     @RfControl() String? companyName,
     @RfControl() String? name,
-  }) = _Id;
+  }) = _IdO;
 
-  Id._();
+  IdO._();
 }
 
 @freezed
-class Product with _$Product {
+abstract class Product with _$Product {
   const factory Product({
     String? companyName,
     String? name,
@@ -40,7 +40,7 @@ class Product with _$Product {
 }
 
 @freezed
-class Cart with _$Cart {
+abstract class Cart with _$Cart {
   const factory Cart({
     Product? product,
     String? description,
